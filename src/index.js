@@ -487,6 +487,174 @@ app.get("/appointments/:userId", async (req, res) => {
   }
 });
 
+app.get("/appointments/doctor/:doctorId", async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+
+    // Find all appointments associated with the given doctor ID
+    const appointments = await Appointment.find({ doctor: doctorId })
+      .populate("patient")
+      .exec();
+
+    // Convert appointment time to Indian Standard Time (IST) before sending the response
+    const ISTOffset = 330 * 60 * 1000; // UTC+5:30
+    const ISTAppointments = appointments.map((appointment) => ({
+      ...appointment.toObject(),
+      time: new Date(appointment.time.getTime() - ISTOffset),
+      end: new Date(appointment.end.getTime() - ISTOffset),
+    }));
+
+    res.status(200).json({ appointments: ISTAppointments });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+app.get("/appointments/doctor/:doctorId/status/:status", async (req, res) => {
+  try {
+    const { doctorId, status } = req.params;
+
+    // find the doctor
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ error: "Doctor not found" });
+    }
+
+    // find the appointments
+    const appointments = await Appointment.find({
+      doctor: doctorId,
+      status,
+    }).populate("patient");
+
+    // convert appointment times to Indian Standard Time
+    const appointmentsIST = appointments.map((appointment) => {
+      const date = new Date(appointment.time);
+      const ISTOffset = 330 * 60 * 1000; // 5.5 hours in milliseconds
+      const ISTTime = new Date(date.getTime() + ISTOffset);
+      return {
+        ...appointment.toObject(),
+        time: ISTTime,
+        end: new Date(appointment.end).toLocaleString("en-IN", options),
+      };
+    });
+
+    return res.status(200).json({ appointments: appointmentsIST });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+app.get("/appointments/doctor/:id/today", async (req, res) => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const appointments = await Appointment.find({
+      doctor: req.params.id,
+      time: { $gte: todayStart, $lte: todayEnd },
+    });
+
+    // convert UTC time to Indian Standard Time
+    const appointmentsIST = appointments.map((appointment) => {
+      const timeIST = moment.utc(appointment.time).utcOffset("+05:30").format();
+      return { ...appointment._doc, time: timeIST };
+    });
+
+    return res.status(200).json({ appointments: appointmentsIST });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+app.get("/appointments/upcoming/:doctor", async (req, res) => {
+  try {
+    const { doctor } = req.params;
+    const appointments = await Appointment.find({
+      doctor,
+      time: { $gte: new Date() },
+    })
+      .sort({ time: 1 })
+      .limit(5);
+
+    if (!appointments) {
+      return res
+        .status(404)
+        .json({ message: "No upcoming appointments found" });
+    }
+
+    const appointmentsIST = appointments.map((appointment) => {
+      const date = new Date(appointment.time);
+      const ISTOffset = 330 * 60 * 1000; // 5.5 hours in milliseconds
+      const ISTTime = new Date(date.getTime() + ISTOffset);
+      return {
+        ...appointment.toObject(),
+        time: ISTTime,
+        end: new Date(appointment.end).toLocaleString("en-IN", options),
+      };
+    });
+
+    return res.status(200).json({ appointments: appointmentsIST });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+//put request ,, **** you can't rescudule the appointment as of now 2-5-23
+app.put("/appointments/:id", async (req, res) => {
+  try {
+    const appointmentId = req.params.id;
+
+    // Find the appointment by ID
+    const appointment = await Appointment.findById(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    const UpdatedAppoint = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      {
+        ...appointment.toObject(),
+        ...req.body,
+      },
+      {
+        new: true,
+      }
+    );
+
+    res.status(200).json({
+      message: "Appointment updated successfully",
+      appointment: UpdatedAppoint,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+app.delete('/appointments/:id', (req, res) => {
+  const appointmentId = req.params.id;
+
+  Appointment.findByIdAndDelete(appointmentId)
+    .then(appointment => {
+      if (!appointment) {
+        return res.status(404).send({ message: 'Appointment not found' });
+      }
+      return res.send({ message: 'Appointment deleted successfully' });
+    })
+    .catch(error => {
+      console.error(error);
+      return res.status(500).send({ message: 'Failed to delete appointment' });
+    });
+});
+
+
 // schedule api calls
 
 //POST request to create the schedule
