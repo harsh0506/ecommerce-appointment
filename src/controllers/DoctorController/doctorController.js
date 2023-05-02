@@ -1,13 +1,9 @@
 const { Doctor, Hospital, Appointment, Schedule } = require("../../Healtcare");
 const { User } = require("../../Models");
-<<<<<<< HEAD
 var validator = require("validator");
 const Joi = require("joi");
 const moment = require("moment");
 const Moment_timezone = require("moment-timezone");
-=======
-
->>>>>>> 789a79c29c3014b621610736dc195fb049cb81d1
 exports.createDoctor = async (req, res) => {
   const { email } = req.body;
 

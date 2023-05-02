@@ -1,13 +1,9 @@
 const { Doctor, Hospital, Appointment, Schedule } = require("../../Healtcare");
 const { User } = require("../../Models");
-<<<<<<< HEAD
 var validator = require("validator");
 const Joi = require("joi");
 const moment = require("moment");
 const Moment_timezone = require("moment-timezone");
-=======
-
->>>>>>> 789a79c29c3014b621610736dc195fb049cb81d1
 exports.Create = async (req, res) => {
   const { name, address, phoneNumber, email, doctors } = req.body;
 
@@ -74,11 +70,7 @@ exports.Create = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 exports.GetAll = async (req, res) => {
-=======
-app.get("/hospitals/all", async (req, res) => {
->>>>>>> 789a79c29c3014b621610736dc195fb049cb81d1
   try {
     // Retrieve all hospitals from database
     const hospitals = await Hospital.find();
@@ -89,15 +81,9 @@ app.get("/hospitals/all", async (req, res) => {
     // Send error response if there's an error in retrieving hospitals data
     res.status(500).json({ message: err.message });
   }
-<<<<<<< HEAD
 };
 
 exports.GetwithId = async (req, res) => {
-=======
-});
-
-app.get("/hospitals/:id", async (req, res) => {
->>>>>>> 789a79c29c3014b621610736dc195fb049cb81d1
   try {
     // Find the hospital by ID
     const hospital = await Hospital.findById(req.params.id).populate("doctors");
@@ -113,15 +99,9 @@ app.get("/hospitals/:id", async (req, res) => {
     console.error(err);
     return res.status(500).json({ message: "Internal server error" });
   }
-<<<<<<< HEAD
 };
 
 exports.Update = async (req, res) => {
-=======
-});
-
-app.put("/hospitals/:id", async (req, res) => {
->>>>>>> 789a79c29c3014b621610736dc195fb049cb81d1
   const { name, address, phoneNumber, email, employedAt, doctors } = req.body;
   const hospitalId = req.params.id;
 
@@ -188,8 +168,4 @@ app.put("/hospitals/:id", async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
-<<<<<<< HEAD
 };
-=======
-});
->>>>>>> 789a79c29c3014b621610736dc195fb049cb81d1
